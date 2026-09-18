@@ -1,7 +1,7 @@
 # logos-monerod-ui
 
 `monerod_ui` manages the Monero node that
-[`monerod_module`](../logos-monerod-module) runs in-process: start and stop it, watch it
+[`monerod_module`](https://github.com/logos-co/logos-monerod-module) runs in-process: start and stop it, watch it
 sync, change its settings, and read its log.
 
 ```bash

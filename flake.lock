@@ -4092,17 +4092,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1789755983,
-        "narHash": "sha256-4ZHWS+YVz4VCixVtZaobpS22XwO/ywvWQ/e4m12vpYw=",
-        "ref": "refs/heads/main",
-        "rev": "b7cb3ac476148db9c02af51027c4472129dfc047",
-        "revCount": 16,
-        "type": "git",
-        "url": "file:///Users/dlipicar/repos/logos-monero-nix"
+        "lastModified": 1789756471,
+        "narHash": "sha256-oYyha+9jIqV1gPV0TlqOX85rtFlul8gLMuztcwQ6Lyg=",
+        "owner": "logos-co",
+        "repo": "logos-monero-nix",
+        "rev": "f981568d2238c6f37f34aca5a45563ec326447dd",
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "file:///Users/dlipicar/repos/logos-monero-nix"
+        "owner": "logos-co",
+        "repo": "logos-monero-nix",
+        "type": "github"
       }
     },
     "logos-nix": {
@@ -10523,17 +10523,17 @@
         "logos-monero-nix": "logos-monero-nix"
       },
       "locked": {
-        "lastModified": 1789756576,
-        "narHash": "sha256-+N93uYviLgal1wKgfZNzXn9Hk34+VdSpqBLI8TuycR0=",
-        "ref": "refs/heads/main",
-        "rev": "bf84d6d536fe3c89f7acc55e55542b7b4703af99",
-        "revCount": 5,
-        "type": "git",
-        "url": "file:///Users/dlipicar/repos/logos-monerod-module"
+        "lastModified": 1789756892,
+        "narHash": "sha256-HDPudd/DPfSXbrqAqIOigDCm8tF1JDzHBLnYAy48PJA=",
+        "owner": "logos-co",
+        "repo": "logos-monerod-module",
+        "rev": "1ea896a8ad34ec7547d8751f829a791660b3880c",
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "file:///Users/dlipicar/repos/logos-monerod-module"
+        "owner": "logos-co",
+        "repo": "logos-monerod-module",
+        "type": "github"
       }
     },
     "nix-bundle-appimage": {

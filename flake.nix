@@ -3,9 +3,8 @@
 
   inputs = {
     logos-module-builder.url = "github:logos-co/logos-module-builder";
-    # TODO: github:logos-co/logos-monerod-module once that repo is published.
     monerod_module = {
-      url = "git+file:///Users/dlipicar/repos/logos-monerod-module";
+      url = "github:logos-co/logos-monerod-module";
       inputs.logos-module-builder.follows = "logos-module-builder";
     };
   };
