@@ -1,0 +1,30 @@
+{
+  "name": "monerod_ui",
+  "display_name": "Monero Node",
+  "version": "0.1.0",
+  "type": "ui_qml",
+  "interface": "universal",
+  "category": "wallet",
+  "description": "Run and manage a local Monero node: sync progress, peers, settings and the node log.",
+  "author": "Logos Core Team",
+  "main": "monerod_ui_plugin",
+  "icon": "src/icons/monerod.png",
+  "view": "qml/Main.qml",
+  "dependencies": ["monerod_module"],
+  "provides": [
+    { "intent": "monero.node.configure",
+      "params": [ { "name": "network", "type": "string", "required": false,
+                    "description": "mainnet, stagenet or testnet; the node to show" } ],
+      "handoff": true }
+  ],
+  "codegen": {
+    "rep": "src/MonerodBackend.rep",
+    "backend_class": "MonerodBackend",
+    "backend_header": "MonerodBackend.h"
+  },
+  "nix": {
+    "packages": { "build": [], "runtime": ["qt6.qtdeclarative"] },
+    "external_libraries": [],
+    "cmake": { "find_packages": [], "extra_sources": [] }
+  }
+}

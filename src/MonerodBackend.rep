@@ -1,0 +1,18 @@
+#include <QVariantMap>
+
+class MonerodBackend
+{
+    PROP(QString state READONLY)       // stopped|starting|running|stopping|failed|unavailable
+    PROP(QString network READONLY)     // the network the view shows and would start
+    PROP(QString statusJson READONLY)
+    PROP(QString configJson READONLY)
+    PROP(QString logText READONLY)
+    PROP(QString lastError READONLY)
+    PROP(bool busy READONLY)           // start or stop in flight
+
+    SLOT(void selectNetwork(QString network))
+    SLOT(void saveConfig(QString configJson))
+    SLOT(void start())
+    SLOT(void stop())
+    SLOT(void refresh())
+}
