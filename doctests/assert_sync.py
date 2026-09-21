@@ -104,13 +104,19 @@ check("Start enabled, Stop disabled",
       (props("startButton").get("enabled"), props("stopButton").get("enabled")))
 shot("01-stopped.png")
 
-print("1b) the sync label never calls a peerless node Synchronized")
-# syncLabel is pure, so every state can be checked without holding a node in it.
+print("1b) the sync label never calls a node Synchronized on someone else's word")
+# syncLabel(synchronized, peers, targetKnown, tipAgeSecs) is pure, so every state can be
+# checked without holding a node in it. tipAgeSecs -1 = the module reported none.
 for label, args, want in [
-    ("peers + synchronized", "true, 2, false", "Synchronized"),
-    ("synchronized but no peers", "true, 0, false", "No peers"),
-    ("behind with a known target", "false, 2, true", "Syncing"),
-    ("no target yet", "false, 0, false", "Waiting for peers"),
+    ("peers and a fresh tip", "true, 2, false, 300", "Synchronized"),
+    ("peers, no tip age from the module", "true, 2, false, -1", "Synchronized"),
+    ("synchronized but no peers", "true, 0, false, -1", "No peers"),
+    ("no peers, and the tip went cold", "true, 0, false, 63000", "No peers · 17 hours behind"),
+    ("peers, but the tip went cold", "true, 2, false, 63000", "Stalled · 17 hours behind"),
+    ("just over the stale threshold", "true, 0, false, 3601", "No peers · 1 hour behind"),
+    ("exactly at the threshold is not stale", "true, 0, false, 3600", "No peers"),
+    ("behind with a known target", "false, 2, true, -1", "Syncing"),
+    ("no target yet", "false, 0, false, -1", "Waiting for peers"),
 ]:
     got = ev(f"syncLabel({args})")
     check(f"{label} -> {want}", got == want, got)

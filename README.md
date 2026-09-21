@@ -31,7 +31,9 @@ stagenet peers; the first one has taken anywhere from 10 s to 4 minutes to appea
 
 `doctests/assert_sync.py` checks what a spec cannot compare: that the height rises, that
 the bar stays empty and reads **Waiting for peers** until a peer reports the chain height,
-and that `syncLabel` never calls a node with no outgoing peer **Synchronized** — monerod
-keeps that flag set once it has been synced, so an isolated node reports it while its chain
-goes stale. With no peer the card reads **No peers** in the warning colour instead.
+and that `syncLabel` never calls a node **Synchronized** on monerod's word alone — that flag
+stays set once a node has synced, so one with no peer left reports it while its chain goes
+cold. The card reads **No peers** in the warning colour instead, and appends how far behind
+the tip is once `monerod_module` reports a `tipAgeSecs` over 30 block targets — *No peers ·
+17 hours behind*. A module that reports no tip age just leaves that off.
 Run it against an app started with `QT_QPA_PLATFORM=offscreen QML_INSPECTOR_PORT=3768`.
