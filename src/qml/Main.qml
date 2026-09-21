@@ -22,9 +22,36 @@ Item {
 
     readonly property int height_: st.height || 0
     readonly property int target_: st.targetHeight || 0
+    readonly property int peersOut: st.peersOut || 0
     // monerod reports no target until a peer announces its height.
     readonly property bool targetKnown: target_ > height_
     readonly property real progress: st.synchronized ? 1 : (targetKnown ? height_ / target_ : 0)
+    // -1 when the module reports no tip age: an older one has no such field, and a
+    // syncing node has no tip to age, since get_last_block_header is gated until synced.
+    readonly property int tipAgeSecs: st.tipAgeSecs === undefined ? -1 : st.tipAgeSecs
+    // 30 block targets. Stagenet block times are irregular enough that a tighter
+    // window would call an ordinary gap stale.
+    readonly property int staleAfterSecs: 120 * 30
+    readonly property bool stale: tipAgeSecs > staleAfterSecs
+    // `synchronized` only means no peer has contradicted us: a node with nobody to hear
+    // new blocks from keeps reporting it while its chain goes cold.
+    readonly property bool synced: peersOut > 0 && !stale && !!st.synchronized
+    readonly property bool doubtful: running && !!st.synchronized && !synced
+
+    function fmtBehind(s) {
+        var d = Math.floor(s / 86400)
+        if (d >= 2) return d + " days"
+        var h = Math.floor(s / 3600)
+        return h + (h === 1 ? " hour" : " hours")
+    }
+
+    // Pure, so the doctest can exercise states a live node will not hold on demand.
+    function syncLabel(syncFlag, peers, known, behindSecs) {
+        var behind = behindSecs > root.staleAfterSecs ? " · " + root.fmtBehind(behindSecs) + " behind" : ""
+        if (syncFlag) return peers > 0 ? (behind ? "Stalled" + behind : "Synchronized")
+                                       : "No peers" + behind
+        return known ? "Syncing" : "Waiting for peers"
+    }
 
     function stateColour(s) {
         if (s === "running") return Theme.palette.success
@@ -134,13 +161,13 @@ Item {
                         LogosText {
                             objectName: "syncText"
                             textFormat: Text.PlainText
-                            color: Theme.palette.textTertiary
-                            text: !root.running ? "" : st.synchronized ? "Synchronized"
-                                  : root.targetKnown ? "Syncing" : "Waiting for peers"
+                            color: root.doubtful ? Theme.palette.warning : Theme.palette.textTertiary
+                            text: root.running ? root.syncLabel(!!st.synchronized, root.peersOut,
+                                                                root.targetKnown, root.tipAgeSecs) : ""
                         }
                         LogosText {
                             objectName: "syncPercent"
-                            visible: root.running && root.targetKnown && !st.synchronized
+                            visible: root.running && root.targetKnown && !root.synced
                             textFormat: Text.PlainText
                             text: (Math.floor(root.progress * 1000) / 10) + "%"
                         }
@@ -157,7 +184,8 @@ Item {
                             width: parent.width * root.progress
                             height: parent.height
                             radius: 4
-                            color: st.synchronized ? Theme.palette.success : Theme.palette.info
+                            color: root.synced ? Theme.palette.success
+                                   : root.doubtful ? Theme.palette.warning : Theme.palette.info
                         }
                     }
 
