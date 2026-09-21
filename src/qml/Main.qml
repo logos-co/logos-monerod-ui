@@ -22,9 +22,20 @@ Item {
 
     readonly property int height_: st.height || 0
     readonly property int target_: st.targetHeight || 0
+    readonly property int peersOut: st.peersOut || 0
     // monerod reports no target until a peer announces its height.
     readonly property bool targetKnown: target_ > height_
     readonly property real progress: st.synchronized ? 1 : (targetKnown ? height_ / target_ : 0)
+    // `synchronized` only means no peer has contradicted us: an isolated node keeps
+    // reporting it while its chain goes stale, so it counts only with a peer attached.
+    readonly property bool synced: peersOut > 0 && !!st.synchronized
+    readonly property bool isolated: running && peersOut <= 0 && !!st.synchronized
+
+    // Pure, so the doctest can exercise states a live node will not hold on demand.
+    function syncLabel(syncFlag, peers, known) {
+        if (syncFlag) return peers > 0 ? "Synchronized" : "No peers"
+        return known ? "Syncing" : "Waiting for peers"
+    }
 
     function stateColour(s) {
         if (s === "running") return Theme.palette.success
@@ -134,13 +145,12 @@ Item {
                         LogosText {
                             objectName: "syncText"
                             textFormat: Text.PlainText
-                            color: Theme.palette.textTertiary
-                            text: !root.running ? "" : st.synchronized ? "Synchronized"
-                                  : root.targetKnown ? "Syncing" : "Waiting for peers"
+                            color: root.isolated ? Theme.palette.warning : Theme.palette.textTertiary
+                            text: root.running ? root.syncLabel(!!st.synchronized, root.peersOut, root.targetKnown) : ""
                         }
                         LogosText {
                             objectName: "syncPercent"
-                            visible: root.running && root.targetKnown && !st.synchronized
+                            visible: root.running && root.targetKnown && !root.synced
                             textFormat: Text.PlainText
                             text: (Math.floor(root.progress * 1000) / 10) + "%"
                         }
@@ -157,7 +167,8 @@ Item {
                             width: parent.width * root.progress
                             height: parent.height
                             radius: 4
-                            color: st.synchronized ? Theme.palette.success : Theme.palette.info
+                            color: root.synced ? Theme.palette.success
+                                   : root.isolated ? Theme.palette.warning : Theme.palette.info
                         }
                     }
 

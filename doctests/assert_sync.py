@@ -104,6 +104,17 @@ check("Start enabled, Stop disabled",
       (props("startButton").get("enabled"), props("stopButton").get("enabled")))
 shot("01-stopped.png")
 
+print("1b) the sync label never calls a peerless node Synchronized")
+# syncLabel is pure, so every state can be checked without holding a node in it.
+for label, args, want in [
+    ("peers + synchronized", "true, 2, false", "Synchronized"),
+    ("synchronized but no peers", "true, 0, false", "No peers"),
+    ("behind with a known target", "false, 2, true", "Syncing"),
+    ("no target yet", "false, 0, false", "Waiting for peers"),
+]:
+    got = ev(f"syncLabel({args})")
+    check(f"{label} -> {want}", got == want, got)
+
 print("2) Start -> running")
 t0 = time.time()
 click("startButton")
