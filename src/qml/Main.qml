@@ -73,7 +73,6 @@ Item {
 
     function loadForm() {
         pruneBox.checked = !!cfg.pruneBlockchain
-        igdBox.checked = !!cfg.noIgd
         offlineBox.checked = !!cfg.offline
         dataDirField.text = cfg.dataDir || ""
         rpcPortField.text = cfg.rpcBindPort !== undefined ? String(cfg.rpcBindPort) : ""
@@ -89,7 +88,7 @@ Item {
 
     function saveForm() {
         backend.saveConfig(JSON.stringify({
-            pruneBlockchain: pruneBox.checked, noIgd: igdBox.checked, offline: offlineBox.checked,
+            pruneBlockchain: pruneBox.checked, offline: offlineBox.checked,
             dataDir: dataDirField.text.trim(),
             rpcBindPort: parseInt(rpcPortField.text), p2pBindPort: parseInt(p2pPortField.text),
             outPeers: parseInt(outPeersField.text), inPeers: parseInt(inPeersField.text),
@@ -281,8 +280,6 @@ Item {
                     LogosTextField { id: logLevelField; Layout.fillWidth: true; placeholderText: "0-4" }
                     LogosText { text: ""; opacity: 0 }
                     LogosCheckbox { id: pruneBox; text: "Prune the blockchain" }
-                    LogosText { text: ""; opacity: 0 }
-                    LogosCheckbox { id: igdBox; text: "Disable UPnP port mapping" }
                     LogosText { text: ""; opacity: 0 }
                     LogosCheckbox { id: offlineBox; text: "Offline (do not connect to peers)" }
                     LogosText { text: ""; opacity: 0 }
