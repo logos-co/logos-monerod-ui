@@ -1,7 +1,7 @@
 {
   "name": "monerod_ui",
   "display_name": "Monero Node",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "ui_qml",
   "interface": "universal",
   "category": "wallet",
@@ -11,7 +11,7 @@
   "icon": "src/icons/monerod.png",
   "view": "qml/Main.qml",
   "dependencies": [
-    { "name": "monerod_module", "version": "~0.1.0" }
+    { "name": "monerod_module", "version": "~0.2.0" }
   ],
   "provides": [
     { "intent": "monero.node.configure",
