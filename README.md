@@ -14,6 +14,16 @@ are locked while the node runs. RPC binds to `127.0.0.1` only, so nothing else o
 network can reach the node. A mainnet node downloads about 60 GB pruned, 250 GB unpruned;
 the view warns about it before a mainnet start.
 
+**Tor for transactions.** The settings carry a switch for `monerod_module`'s `txProxy`: on
+mainnet, on by default, the node sends the transactions handed to it to Tor peers only, through
+the Tor that comes with Logos. Until a Tor peer connects it holds them and retries over Tor; if
+Tor is unavailable when the node starts, it runs without it and its transactions, held ones
+included, go out over the regular network. On stagenet and testnet the switch shows off and
+locked: Monero ships no Tor peers for them. While the node runs, a **Tor** row shows what it
+started with (on, with the port; unavailable, with why; off) and the module's note when a
+restart would pick up a changed Tor port. Against a `monerod_module` that predates `txProxy`
+the switch and the row stay hidden, and Save leaves the key out.
+
 The view polls `status()` every 2 s instead of subscribing to `monerodStateChanged`: a UI
 plugin's subscription is refused if it is armed before the registry handshake settles, and
 a panel built on it silently shows nothing.
@@ -22,6 +32,12 @@ a panel built on it silently shows nothing.
 
 The app **provides** `monero.node.configure` (handoff). A request may carry
 `{"network": "stagenet"}`; if the node is stopped the view switches to that network.
+
+## CI
+
+`.github/workflows/ci.yml` builds the package, lints `src/qml/Main.qml`, constructs it
+(`ci/construct.qml`) and drives the `txProxy` states against a fake backend
+(`ci/states.qml`, which prints `STATES-OK`), with Qt from the builder's logos-nix pin.
 
 ## Doctests
 
