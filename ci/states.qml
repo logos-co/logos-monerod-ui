@@ -82,7 +82,7 @@ Item {
             expect("...saying where payments go", note.indexOf("go to Tor peers only") >= 0, true)
             expect("...that they wait for Tor, even with Tor down", note.indexOf("Tor down included, the node holds them and retries over Tor") >= 0, true)
             expect("...never in the clear", note.indexOf("nothing goes out over the regular network") >= 0, true)
-            expect("...and what switching it off does", note.indexOf("Switched off, a payment still waiting goes out over the regular network, from this computer's IP address, when the node next starts.") >= 0, true)
+            expect("...and what switching it off does", note.indexOf("Switched off, a payment still waiting goes out over the regular network, from this computer's IP address, after the node next starts.") >= 0, true)
             expect("stopped: no live Tor row, no Restart", [shown("txProxyText"), shown("txProxyDetail"), prop("restartButton", "enabled")], [false, false, false])
             find(view.item, "saveButton", 0).clicked()
         },

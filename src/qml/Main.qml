@@ -51,7 +51,7 @@ Item {
                + "Logos. While no Tor peer is connected, Tor down included, the node holds them and "
                + "retries over Tor; nothing goes out over the regular network. Switched off, a payment "
                + "still waiting goes out over the regular network, from this computer's IP address, "
-               + "when the node next starts."
+               + "after the node next starts."
     }
     function txProxyLabel(s) {
         if (s.txProxy !== "on") return "Off"

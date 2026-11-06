@@ -19,7 +19,7 @@ mainnet, on by default, the node sends the payments handed to it to Tor peers on
 Tor that comes with Logos. The node always starts with Tor's port set, Tor up or not: while no
 Tor peer is connected it holds payments and retries over Tor, and nothing goes out over the
 regular network. Switched off, a payment still waiting goes out over the regular network, from
-this computer's IP address, when the node next starts; the switch's note says so. On stagenet
+this computer's IP address, after the node next starts; the switch's note says so. On stagenet
 and testnet the switch shows off and locked: Monero ships no Tor peers for them. While the node
 runs, a **Tor** row shows the port and the node's Tor peers, and, while payments wait, the
 module's reason (no Tor peer, Tor not available, or Tor moved to another port). **Restart**
