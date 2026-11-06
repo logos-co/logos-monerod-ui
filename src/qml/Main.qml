@@ -47,22 +47,21 @@ Item {
         if (network !== "mainnet")
             return "Mainnet only: Monero ships no Tor peers for " + network
                    + ", so a transaction sent this way would never leave the node."
-        return "Transactions sent through this node go to Tor peers only, through the Tor that comes "
-               + "with Logos. Until a Tor peer connects, the node holds them and retries over Tor. "
-               + "If Tor is unavailable when the node starts, the node runs without it: its "
-               + "transactions, held ones included, then go out over the regular network."
+        return "Payments sent through this node go to Tor peers only, through the Tor that comes with "
+               + "Logos. While no Tor peer is connected, Tor down included, the node holds them and "
+               + "retries over Tor; nothing goes out over the regular network. Switched off, a payment "
+               + "still waiting goes out over the regular network, from this computer's IP address, "
+               + "when the node next starts."
     }
     function txProxyLabel(s) {
-        if (s.txProxy === "on") return "On · " + s.txProxySocks
-        if (s.txProxy === "unavailable") return "Unavailable"
-        return "Off"
+        if (s.txProxy !== "on") return "Off"
+        var n = s.txProxyPeers
+        return "On · " + s.txProxySocks
+               + (n === undefined || n < 0 ? "" : " · " + n + (n === 1 ? " Tor peer" : " Tor peers"))
     }
-    // The module's reason says what changed since the start, or why Tor was not used.
+    // The module says why payments wait: no Tor peer, Tor unavailable, or a port that needs a restart.
     function txProxyDetail(s) {
-        if (s.txProxy === "unavailable" && !s.txProxyRestart)
-            return "Started without Tor: " + (s.txProxyReason || "no reason given")
-                   + ". This node's transactions go out over the regular network."
-        return s.txProxyReason || ""
+        return s.txProxy === "on" && (s.txProxyWaiting || s.txProxyRestart) ? (s.txProxyReason || "") : ""
     }
 
     function fmtBehind(s) {
@@ -274,6 +273,12 @@ Item {
                             enabled: root.ready && root.active && !backend.busy
                             onClicked: backend.stop()
                         }
+                        LogosButton {
+                            objectName: "restartButton"
+                            text: "Restart"
+                            enabled: root.ready && root.running && !backend.busy
+                            onClicked: backend.restart()
+                        }
                         LogosSpinner { visible: root.ready && backend.busy; running: visible }
                     }
                 }
@@ -332,7 +337,7 @@ Item {
                         LogosSwitch {
                             id: txProxySwitch
                             objectName: "txProxySwitch"
-                            text: "Send transactions over Tor only"
+                            text: "Send payments over Tor only"
                             enabled: root.onMainnet
                         }
                         LogosText {

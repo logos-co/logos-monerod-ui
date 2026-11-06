@@ -1,7 +1,7 @@
 import QtQuick
 
 // Drives the view through the txProxy states against a fake backend: the switch per network, what
-// Save stores, the live Tor row, and a module too old to know txProxy.
+// Save stores, the live Tor row and why payments wait, Restart, and a module too old to know txProxy.
 // Prints STATES-OK, or STATES-FAIL with the cases that disagree.
 Item {
     id: scene
@@ -31,8 +31,9 @@ Item {
         }
         function selectNetwork(n) { note("selectNetwork", [n]) }
         function saveConfig(c) { note("saveConfig", [JSON.parse(c)]) }
-        function start() {}
-        function stop() {}
+        function start() { note("start", []) }
+        function stop() { note("stop", []) }
+        function restart() { note("restart", []) }
         function refresh() {}
     }
 
@@ -76,10 +77,13 @@ Item {
         function (v) {
             expect("mainnet: the switch shows, on and usable", [shown("txProxySwitch"), prop("txProxySwitch", "checked"), prop("txProxySwitch", "enabled")],
                    [true, true, true])
-            expect("...saying where transactions go", prop("txProxyNote", "text").indexOf("go to Tor peers only") >= 0, true)
-            expect("...that they wait for a Tor peer", prop("txProxyNote", "text").indexOf("holds them and retries over Tor") >= 0, true)
-            expect("...and what happens without Tor at start", prop("txProxyNote", "text").indexOf("held ones included, then go out over the regular network") >= 0, true)
-            expect("stopped: no live Tor row", [shown("txProxyText"), shown("txProxyDetail")], [false, false])
+            expect("...named for payments", prop("txProxySwitch", "text"), "Send payments over Tor only")
+            var note = prop("txProxyNote", "text")
+            expect("...saying where payments go", note.indexOf("go to Tor peers only") >= 0, true)
+            expect("...that they wait for Tor, even with Tor down", note.indexOf("Tor down included, the node holds them and retries over Tor") >= 0, true)
+            expect("...never in the clear", note.indexOf("nothing goes out over the regular network") >= 0, true)
+            expect("...and what switching it off does", note.indexOf("Switched off, a payment still waiting goes out over the regular network, from this computer's IP address, when the node next starts.") >= 0, true)
+            expect("stopped: no live Tor row, no Restart", [shown("txProxyText"), shown("txProxyDetail"), prop("restartButton", "enabled")], [false, false, false])
             find(view.item, "saveButton", 0).clicked()
         },
         function (v) {
@@ -105,31 +109,47 @@ Item {
         function (v) {
             expect("testnet: off with its name", [prop("txProxySwitch", "enabled"), prop("txProxyNote", "text").indexOf("for testnet,") > 0], [false, true])
             show("mainnet", cfg({}))
-            run({ network: "mainnet", txProxy: "on", txProxySocks: "127.0.0.1:9250", txProxyReason: "", txProxyRestart: false })
+            run({ network: "mainnet", txProxy: "on", txProxySocks: "127.0.0.1:9250", txProxyPeers: 3,
+                  txProxyWaiting: false, txProxyReason: "", txProxyRestart: false })
         },
         function (v) {
-            expect("running on: the Tor row names the port", [shown("txProxyText"), prop("txProxyText", "text")], [true, "On · 127.0.0.1:9250"])
+            expect("running on: the Tor row names the port and the peers", [shown("txProxyText"), prop("txProxyText", "text")],
+                   [true, "On · 127.0.0.1:9250 · 3 Tor peers"])
             expect("...nothing to add", shown("txProxyDetail"), false)
             expect("...the switch locked while it runs", prop("txProxySwitch", "enabled"), false)
-            run({ network: "mainnet", txProxy: "unavailable", txProxySocks: "", txProxyReason: "tor_module is not loaded", txProxyRestart: false })
+            run({ network: "mainnet", txProxy: "on", txProxySocks: "127.0.0.1:9250", txProxyPeers: -1, txProxyWaiting: true,
+                  txProxyRestart: false,
+                  txProxyReason: "Tor is not available: tor_module is not loaded. Payments wait in the node until it is and a Tor peer connects." })
         },
         function (v) {
-            expect("unavailable: the row says so", prop("txProxyText", "text"), "Unavailable")
-            expect("...and why, and what it means", [shown("txProxyDetail"), prop("txProxyDetail", "text")],
-                   [true, "Started without Tor: tor_module is not loaded. This node's transactions go out over the regular network."])
-            run({ network: "mainnet", txProxy: "unavailable", txProxySocks: "", txProxyRestart: true,
-                  txProxyReason: "Tor's SOCKS port is up at 127.0.0.1:9250: restart the node to use it" })
+            expect("Tor down: still On, peers not known yet", prop("txProxyText", "text"), "On · 127.0.0.1:9250")
+            expect("...and why payments wait", [shown("txProxyDetail"), prop("txProxyDetail", "text")],
+                   [true, "Tor is not available: tor_module is not loaded. Payments wait in the node until it is and a Tor peer connects."])
+            run({ network: "mainnet", txProxy: "on", txProxySocks: "127.0.0.1:9250", txProxyPeers: 0, txProxyWaiting: true,
+                  txProxyRestart: false, txProxyReason: "No Tor peer yet. Payments wait in the node until one connects." })
         },
         function (v) {
-            expect("Tor came up since: the module's restart hint", prop("txProxyDetail", "text"),
-                   "Tor's SOCKS port is up at 127.0.0.1:9250: restart the node to use it")
-            run({ network: "mainnet", txProxy: "on", txProxySocks: "127.0.0.1:9250", txProxyRestart: false,
-                  txProxyReason: "Tor's SOCKS port has been unavailable since the start (Tor's SOCKS port is off in the Tor app): transactions wait until it is back" })
+            expect("no Tor peer yet", [prop("txProxyText", "text"), prop("txProxyDetail", "text")],
+                   ["On · 127.0.0.1:9250 · 0 Tor peers", "No Tor peer yet. Payments wait in the node until one connects."])
+            run({ network: "mainnet", txProxy: "on", txProxySocks: "127.0.0.1:9250", txProxyPeers: 1, txProxyWaiting: false,
+                  txProxyRestart: false, txProxyReason: "" })
         },
         function (v) {
-            expect("port gone while on: still On, with the reason", [prop("txProxyText", "text"), prop("txProxyDetail", "text").indexOf("transactions wait until it is back") > 0],
-                   ["On · 127.0.0.1:9250", true])
-            run({ network: "stagenet", txProxy: "off", txProxySocks: "", txProxyReason: "", txProxyRestart: false })
+            expect("one Tor peer", [prop("txProxyText", "text"), shown("txProxyDetail")], ["On · 127.0.0.1:9250 · 1 Tor peer", false])
+            run({ network: "mainnet", txProxy: "on", txProxySocks: "127.0.0.1:9250", txProxyPeers: 2, txProxyWaiting: true,
+                  txProxyRestart: true,
+                  txProxyReason: "Tor moved to 127.0.0.1:41234. Restart the node to use it; until then payments wait in the node." })
+        },
+        function (v) {
+            expect("Tor moved: the module's restart hint", prop("txProxyDetail", "text"),
+                   "Tor moved to 127.0.0.1:41234. Restart the node to use it; until then payments wait in the node.")
+            expect("...and Restart is there", [shown("restartButton"), prop("restartButton", "enabled"), prop("restartButton", "text")], [true, true, "Restart"])
+            find(view.item, "restartButton", 0).clicked()
+        },
+        function (v) {
+            expect("Restart asks the backend to restart", (fake.last("restart") || [])[0], "restart")
+            run({ network: "stagenet", txProxy: "off", txProxySocks: "", txProxyPeers: -1, txProxyWaiting: false,
+                  txProxyReason: "", txProxyRestart: false })
             show("stagenet", cfg({ txProxy: false }))
         },
         function (v) {
@@ -151,6 +171,7 @@ Item {
         },
         function (v) {
             expect("...and no Tor row", [shown("txProxyText"), shown("txProxyDetail")], [false, false])
+            expect("...Restart still works", prop("restartButton", "enabled"), true)
         }
     ]
     property int step: 0
