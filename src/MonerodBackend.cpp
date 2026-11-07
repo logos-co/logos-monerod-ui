@@ -108,4 +108,16 @@ void MonerodBackend::stop() {
     }, Timeout(kStopTimeoutMs));
 }
 
+// A changed Tor port takes a restart: monerod reads --tx-proxy once, at start.
+void MonerodBackend::restart() {
+    if (!m_logos || busy()) return;
+    setBusy(true);
+    setLastError({});
+    m_logos->monerod_module.stopAsyncResult([this](logos::AsyncResult<LogosResult> r) {
+        setBusy(false);
+        if (!r.ok()) { setLastError(describe(r.error)); poll(); return; }
+        start();
+    }, Timeout(kStopTimeoutMs));
+}
+
 void MonerodBackend::refresh() { poll(); }

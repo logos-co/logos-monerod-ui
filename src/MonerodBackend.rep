@@ -14,5 +14,6 @@ class MonerodBackend
     SLOT(void saveConfig(QString configJson))
     SLOT(void start())
     SLOT(void stop())
+    SLOT(void restart())               // stop, then start the same network
     SLOT(void refresh())
 }
