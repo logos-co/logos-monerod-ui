@@ -138,12 +138,14 @@ Item {
             expect("one Tor peer", [prop("txProxyText", "text"), shown("txProxyDetail")], ["On · 127.0.0.1:9250 · 1 Tor peer", false])
             run({ network: "mainnet", txProxy: "on", txProxySocks: "127.0.0.1:9250", txProxyPeers: 2, txProxyWaiting: true,
                   txProxyRestart: true,
-                  txProxyReason: "Tor moved to 127.0.0.1:41234. Restart the node to use it; until then payments wait in the node." })
+                  txProxyReason: "Tor moved to 127.0.0.1:41234; the node restarts in a few seconds to use it." })
         },
         function (v) {
-            expect("Tor moved: the module's restart hint", prop("txProxyDetail", "text"),
-                   "Tor moved to 127.0.0.1:41234. Restart the node to use it; until then payments wait in the node.")
+            expect("Tor moved: the node restarts on its own", prop("txProxyDetail", "text"),
+                   "Tor moved to 127.0.0.1:41234; the node restarts in a few seconds to use it.")
             expect("...and Restart is there", [shown("restartButton"), prop("restartButton", "enabled"), prop("restartButton", "text")], [true, true, "Restart"])
+            expect("...with help for a node without Tor peers", [shown("restartHelp"), prop("restartHelp", "text").indexOf("are skipped for up to an hour") > 0,
+                   prop("restartHelp", "text").indexOf("restarts on its own") > 0], [true, true, true])
             find(view.item, "restartButton", 0).clicked()
         },
         function (v) {

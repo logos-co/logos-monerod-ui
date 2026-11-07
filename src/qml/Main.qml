@@ -59,7 +59,7 @@ Item {
         return "On · " + s.txProxySocks
                + (n === undefined || n < 0 ? "" : " · " + n + (n === 1 ? " Tor peer" : " Tor peers"))
     }
-    // The module says why payments wait: no Tor peer, Tor unavailable, or a port that needs a restart.
+    // The module says why payments wait: no Tor peer, Tor unavailable, or its restart onto Tor's new port.
     function txProxyDetail(s) {
         return s.txProxy === "on" && (s.txProxyWaiting || s.txProxyRestart) ? (s.txProxyReason || "") : ""
     }
@@ -278,6 +278,14 @@ Item {
                             text: "Restart"
                             enabled: root.ready && root.running && !backend.busy
                             onClicked: backend.restart()
+                        }
+                        LogosInfoButton {
+                            objectName: "restartHelp"
+                            title: "Restart"
+                            text: "Stops the node and starts it again with the same settings.\n\n"
+                                + "When Tor moves to another port, the node restarts on its own, within a minute.\n\n"
+                                + "Restart helps when no Tor peer connects for a while: Tor peers the node failed "
+                                + "to reach are skipped for up to an hour, and a restart lets it try them again."
                         }
                         LogosSpinner { visible: root.ready && backend.busy; running: visible }
                     }

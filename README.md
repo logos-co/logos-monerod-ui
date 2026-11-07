@@ -22,9 +22,11 @@ regular network. Switched off, a payment still waiting goes out over the regular
 this computer's IP address, after the node next starts; the switch's note says so. On stagenet
 and testnet the switch shows off and locked: Monero ships no Tor peers for them. While the node
 runs, a **Tor** row shows the port and the node's Tor peers, and, while payments wait, the
-module's reason (no Tor peer, Tor not available, or Tor moved to another port). **Restart**
-stops and starts the node, which a moved Tor port needs. Against a `monerod_module` that
-predates `txProxy` the switch and the row stay hidden, and Save leaves the key out.
+module's reason: no Tor peer, Tor not available, or the restart onto the port Tor moved to,
+which the node does on its own. **Restart** stops and starts the node; its "i" says when that
+helps: Tor peers the node failed to reach are skipped for up to an hour, and a restart lets it
+try them again. Against a `monerod_module` that predates `txProxy` the switch and the row
+stay hidden, and Save leaves the key out.
 
 The view polls `status()` every 2 s instead of subscribing to `monerodStateChanged`: a UI
 plugin's subscription is refused if it is armed before the registry handshake settles, and
