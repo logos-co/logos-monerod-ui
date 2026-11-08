@@ -38,6 +38,32 @@ Item {
     readonly property bool synced: peersOut > 0 && !stale && !!st.synchronized
     readonly property bool doubtful: running && !!st.synchronized && !synced
 
+    // monerod_module before txProxy reports neither field: the switch and the row then stay hidden.
+    readonly property bool hasTxProxy: cfg.txProxy !== undefined
+    readonly property bool txProxyShown: !stopped && st.txProxy !== undefined
+    readonly property bool onMainnet: ready && backend.network === "mainnet"
+
+    function txProxyNote(network) {
+        if (network !== "mainnet")
+            return "Mainnet only: Monero ships no Tor peers for " + network
+                   + ", so a transaction sent this way would never leave the node."
+        return "Payments sent through this node go to Tor peers only, through the Tor that comes with "
+               + "Logos. While no Tor peer is connected, Tor down included, the node holds them and "
+               + "retries over Tor; nothing goes out over the regular network. Switched off, a payment "
+               + "still waiting goes out over the regular network, from this computer's IP address, "
+               + "after the node next starts."
+    }
+    function txProxyLabel(s) {
+        if (s.txProxy !== "on") return "Off"
+        var n = s.txProxyPeers
+        return "On · " + s.txProxySocks
+               + (n === undefined || n < 0 ? "" : " · " + n + (n === 1 ? " Tor peer" : " Tor peers"))
+    }
+    // The module says why payments wait: no Tor peer, Tor unavailable, or its restart onto Tor's new port.
+    function txProxyDetail(s) {
+        return s.txProxy === "on" && (s.txProxyWaiting || s.txProxyRestart) ? (s.txProxyReason || "") : ""
+    }
+
     function fmtBehind(s) {
         var d = Math.floor(s / 86400)
         if (d >= 2) return d + " days"
@@ -83,18 +109,22 @@ Item {
         downField.text = cfg.limitRateDown !== undefined ? String(cfg.limitRateDown) : "-1"
         logLevelField.text = cfg.logLevel !== undefined ? String(cfg.logLevel) : "0"
         proxyField.text = cfg.proxy || ""
+        txProxySwitch.checked = !!cfg.txProxy
     }
     onCfgChanged: loadForm()
 
     function saveForm() {
-        backend.saveConfig(JSON.stringify({
+        var c = {
             pruneBlockchain: pruneBox.checked, offline: offlineBox.checked,
             dataDir: dataDirField.text.trim(),
             rpcBindPort: parseInt(rpcPortField.text), p2pBindPort: parseInt(p2pPortField.text),
             outPeers: parseInt(outPeersField.text), inPeers: parseInt(inPeersField.text),
             limitRateUp: parseInt(upField.text), limitRateDown: parseInt(downField.text),
             logLevel: parseInt(logLevelField.text), proxy: proxyField.text.trim()
-        }))
+        }
+        // An older module refuses a key it does not know.
+        if (root.hasTxProxy) c.txProxy = txProxySwitch.checked
+        backend.saveConfig(JSON.stringify(c))
     }
 
     Connections {
@@ -201,6 +231,23 @@ Item {
                         LogosText { textFormat: Text.PlainText; text: root.running ? root.fmtBytes(st.databaseSize) : "—" }
                         LogosText { text: "Version"; color: Theme.palette.textTertiary }
                         LogosText { textFormat: Text.PlainText; text: st.version || "—" }
+                        LogosText { visible: root.txProxyShown; text: "Tor"; color: Theme.palette.textTertiary }
+                        LogosText {
+                            objectName: "txProxyText"
+                            visible: root.txProxyShown
+                            textFormat: Text.PlainText
+                            text: root.txProxyLabel(st)
+                        }
+                    }
+
+                    LogosText {
+                        objectName: "txProxyDetail"
+                        Layout.fillWidth: true
+                        visible: root.txProxyShown && text !== ""
+                        textFormat: Text.PlainText
+                        wrapMode: Text.Wrap
+                        color: Theme.palette.warning
+                        text: root.txProxyShown ? root.txProxyDetail(st) : ""
                     }
 
                     LogosText {
@@ -225,6 +272,20 @@ Item {
                             text: "Stop"
                             enabled: root.ready && root.active && !backend.busy
                             onClicked: backend.stop()
+                        }
+                        LogosButton {
+                            objectName: "restartButton"
+                            text: "Restart"
+                            enabled: root.ready && root.running && !backend.busy
+                            onClicked: backend.restart()
+                        }
+                        LogosInfoButton {
+                            objectName: "restartHelp"
+                            title: "Restart"
+                            text: "Stops the node and starts it again with the same settings.\n\n"
+                                + "When Tor moves to another port, the node restarts on its own, within a minute.\n\n"
+                                + "Restart helps when no Tor peer connects for a while: Tor peers the node failed "
+                                + "to reach are skipped for up to an hour, and a restart lets it try them again."
                         }
                         LogosSpinner { visible: root.ready && backend.busy; running: visible }
                     }
@@ -276,6 +337,26 @@ Item {
                     }
                     LogosText { text: "Proxy"; color: Theme.palette.textTertiary }
                     LogosTextField { id: proxyField; Layout.fillWidth: true; placeholderText: "e.g. 127.0.0.1:9050 (empty for none)" }
+                    LogosText { visible: root.hasTxProxy; text: "Tor"; color: Theme.palette.textTertiary }
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        visible: root.hasTxProxy
+                        spacing: 4
+                        LogosSwitch {
+                            id: txProxySwitch
+                            objectName: "txProxySwitch"
+                            text: "Send payments over Tor only"
+                            enabled: root.onMainnet
+                        }
+                        LogosText {
+                            objectName: "txProxyNote"
+                            Layout.fillWidth: true
+                            textFormat: Text.PlainText
+                            wrapMode: Text.Wrap
+                            color: Theme.palette.textTertiary
+                            text: root.txProxyNote(root.ready ? backend.network : "")
+                        }
+                    }
                     LogosText { text: "Log level"; color: Theme.palette.textTertiary }
                     LogosTextField { id: logLevelField; Layout.fillWidth: true; placeholderText: "0-4" }
                     LogosText { text: ""; opacity: 0 }

@@ -16,6 +16,7 @@ public:
     void saveConfig(QString configJson) override;
     void start() override;
     void stop() override;
+    void restart() override;
     void refresh() override;
 
 protected:

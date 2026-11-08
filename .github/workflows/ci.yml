@@ -48,16 +48,17 @@ jobs:
         with:
           path: logos-monerod-ui
 
-      # The design system's source decides whether `import Logos.Controls` resolves.
-      - name: Find the design-system and logos-nix revisions the builder pins
+      # The design system's source decides whether `import Logos.Controls` resolves: lint against
+      # the one Basecamp master ships, which hosts the app and its doc-test.
+      - name: Find Basecamp's design-system revision and the logos-nix the builder pins
         id: ds
         working-directory: logos-monerod-ui
         shell: bash
         run: |
           set -euo pipefail
-          rev=$(jq -r '.nodes as $n | ($n[.root].inputs["logos-module-builder"]) as $b
-                       | $n[$n[$b].inputs["logos-design-system"]].locked.rev' flake.lock)
-          [[ "$rev" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::no design-system pin in flake.lock ($rev)"; exit 1; }
+          rev=$(curl -fsSL https://raw.githubusercontent.com/logos-co/logos-basecamp/master/flake.lock \
+                | jq -r '.nodes as $n | $n[$n[.root].inputs["logos-design-system"]].locked.rev')
+          [[ "$rev" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::no design-system pin in Basecamp master's flake.lock ($rev)"; exit 1; }
           echo "rev=$rev" >> "$GITHUB_OUTPUT"
           # Qt comes from the logos-nix the builder pins, as in the build; never the runner's nixpkgs.
           nix=$(jq -r '.nodes as $n | ($n[.root].inputs["logos-module-builder"]) as $b
@@ -106,4 +107,20 @@ jobs:
             grep -q "VIEW-READY" /tmp/qml.log || { echo "::error::the view never reported ready"; exit 1; }
             if grep -qE "VIEW-ERROR|does not support customization|Cannot assign|was not found|ReferenceError" /tmp/qml.log; then
               echo "::error::QML errors above"; exit 1
+            fi'
+
+      - name: The txProxy states against a fake backend
+        working-directory: logos-monerod-ui
+        run: |
+          # shellcheck disable=SC2016  # the $(...) is for the inner bash -c, by design
+          nix shell "$QT#qt6.qtdeclarative" "$QT#qt6.qtsvg" -c bash -c '
+            d=$(dirname $(dirname $(readlink -f $(command -v qml))))
+            QT_LOGGING_TO_CONSOLE=1 QT_QUICK_CONTROLS_STYLE=Basic QT_QPA_PLATFORM=offscreen \
+              timeout 120 qml -I "$d/lib/qt-6/qml" -I ../logos-design-system/src/qml \
+              ci/states.qml > /tmp/states.log 2>&1
+            status=$?
+            cat /tmp/states.log
+            grep -q "STATES-OK" /tmp/states.log || { echo "::error::state test failed (exit $status)"; exit 1; }
+            if grep -qE "Cannot assign|Unable to assign|TypeError|ReferenceError" /tmp/states.log; then
+              echo "::error::QML errors while driving the states"; exit 1
             fi'
